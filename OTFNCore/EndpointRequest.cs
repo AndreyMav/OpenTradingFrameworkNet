@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BridgeClient
+namespace OTFN.Core
 {
-    public class ZMQClient
+    public enum EndpointRequest
     {
-
+        Ping,
+        UpdateOrders,
+        
     }
 }
