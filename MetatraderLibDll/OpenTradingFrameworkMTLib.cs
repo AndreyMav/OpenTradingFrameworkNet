@@ -3,18 +3,27 @@ using OTFN.Core.Brokers;
 using OTFN.Core.Market;
 using OTFN.Core.Terminals;
 using OTFN.Core.Utils;
-using RGiesecke.DllExport;
+using log4net;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using log4net.Core;
 
 namespace MetatraderLibDll
 {
     public class OpenTradingFrameworkMTLib
     {
+        static OpenTradingFrameworkMTLib()
+        {
+            log4net.Config.XmlConfigurator.Configure();
+        }
+
+        private static ILog Log = LogManager.GetLogger(typeof(OpenTradingFrameworkMTLib).Name);
+
         private static Dictionary<int, IStrategy> instances = new Dictionary<int,IStrategy>();
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -47,15 +56,16 @@ namespace MetatraderLibDll
         /// 
         /// </summary>
         /// <param name="brokerName"></param>
+        /// <param name="accountId"></param>
         /// <param name="strategyName"></param>
         /// <param name="magic"></param>
         /// <param name="symbol"></param>
         /// <param name="timeframe"></param>
-        /// <param name="accountId"></param>
         /// <returns>InstanceId of this particular expert or negative value on error</returns>
-        [DllExport("OTFN_Init", CallingConvention = CallingConvention.StdCall)]
-        public static int Init(string brokerName, string strategyName, int magic, string symbol, int timeframe, string accountId)
+        public static int Init(string brokerName, string accountId, string strategyName, int magic, string symbol, int timeframe)
         {
+            Log.Info(String.Format("Init: broker: {0}, account: {1}, strategy: {2}, magic: {3}, symbol: {4}, timeframe: {5}", brokerName, accountId, strategyName, magic, symbol, timeframe));
+
             ForexBroker broker = new ForexBroker(brokerName);
             broker = (ForexBroker)BrokerRegistry.RegisterBroker(broker);
             Symbol brokerSymbol = broker.GetSymbolByName(symbol);
@@ -80,8 +90,7 @@ namespace MetatraderLibDll
         }
 
 
-        [DllExport("OTFN_SendOrders", CallingConvention = CallingConvention.StdCall)]
-        public static int SendOrders(int expertId, [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] OrderInfo[] orders, int ordersCount)
+        public static int SendOrders(int expertId, OrderInfo[] orders, int ordersCount)
         {
             IStrategy strategy;
             if (!instances.TryGetValue(expertId, out strategy))
