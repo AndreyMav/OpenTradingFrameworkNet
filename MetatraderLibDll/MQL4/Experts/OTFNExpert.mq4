@@ -20,9 +20,7 @@ OTFNContext *context;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-    Print("Test: ", OTFN_Test("asdasdasd"));
     EventSetTimer(1);
-    
     
     context = new OTFNContext(StrategyName, Magic);
     

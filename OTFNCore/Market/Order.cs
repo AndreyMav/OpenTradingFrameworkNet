@@ -20,5 +20,33 @@ namespace OTFN.Core.Market
         public DateTime CloseTime;
         public int Magic;
 
+        #region Events
+
+        public delegate void ClosedHandler(object sender, EventArgs e);
+        public event ClosedHandler Closed;
+
+        #endregion Events
+
+
+        public override bool Equals(object obj)
+        {
+            if(obj is Order)
+            {
+                return ((Order)obj).Ticket == Ticket;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Ticket.GetHashCode();
+        }
+
+        public void OnClosed()
+        {
+            if (Closed != null)
+                Closed(this, null);
+        }
     }
 }

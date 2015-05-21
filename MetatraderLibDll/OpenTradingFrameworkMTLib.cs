@@ -12,6 +12,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using log4net.Core;
+using OTFN.Core.Errors;
+using OTFN.Core.Strategy;
+using OTFN.Core.Endpoints;
 
 namespace MetatraderLibDll
 {
@@ -69,20 +72,19 @@ namespace MetatraderLibDll
             ForexBroker broker = new ForexBroker(brokerName);
             broker = (ForexBroker)BrokerRegistry.RegisterBroker(broker);
             Symbol brokerSymbol = broker.GetSymbolByName(symbol);
-            
+
             if (brokerSymbol == null)
-                return -1;
+                throw new SymbolNotFoundException(symbol);
 
             Timeframe tf = Timeframe.GetFromMinutes(timeframe);
             Account account = broker.GetAccountById(accountId);
 
-            Endpoint endpoint = new MT4DirectEndpoint(broker, account, brokerSymbol, tf);
+            Endpoint endpoint = EndpointRegistry.RefreshEndpoint(new MT4DirectEndpoint(), broker, account, brokerSymbol, tf);
 
             IStrategy strategy = StrategyRegistry.CreateStrategyInstance(strategyName, endpoint);
+
             if(strategy == null)
-            {
-                return -1;
-            }
+                throw new StrategyNotFoundException(strategyName);
 
             instances[strategy.InstanceId] = strategy;
 

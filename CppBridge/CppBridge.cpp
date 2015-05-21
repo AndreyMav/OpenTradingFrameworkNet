@@ -29,12 +29,12 @@ void InitializeAssemblyResolver()
 }
 
 
-extern "C" __declspec(dllexport) int OTFN_Test(wchar_t *test)
-{
-//	InitializeAssemblyResolver();
-
-	return 1;
-}
+//extern "C" __declspec(dllexport) int OTFN_Test(wchar_t *test)
+//{
+////	InitializeAssemblyResolver();
+//
+//	return 1;
+//}
 
 int DoInit(String ^brokerName, String ^accountId, String ^strategyName, int magic, String ^symbol, int timeframe)
 {

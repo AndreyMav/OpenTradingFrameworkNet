@@ -1,11 +1,13 @@
-﻿using OTFN.Core.Market;
+﻿using OTFN.Core.Endpoints;
+using OTFN.Core.Market;
+using OTFN.Core.Strategy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OTFN.Core
+namespace OTFN.Core.Strategy
 {
     public class StrategyRegistry
     {

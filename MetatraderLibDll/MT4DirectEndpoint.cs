@@ -1,5 +1,6 @@
 ﻿using OTFN.Core;
 using OTFN.Core.Brokers;
+using OTFN.Core.Endpoints;
 using OTFN.Core.Market;
 using OTFN.Core.Terminals;
 using System;
@@ -10,17 +11,12 @@ using System.Threading.Tasks;
 
 namespace MetatraderLibDll
 {
-    class MT4DirectEndpoint : Endpoint
+    class MT4DirectEndpoint : ITradingInterface
     {
-        public MT4DirectEndpoint(Broker broker, Account account, Symbol symbol, Timeframe timeframe)
-            : base(broker, account, symbol, timeframe)
-        {
 
-        }
-
-        protected override Task<List<Order>> UpdateOrders()
+        public Task<List<Order>> GetOrders()
         {
-            return null;
+            throw new NotImplementedException();
         }
     }
 
