@@ -1,5 +1,6 @@
 ﻿using OTFN.Core.Brokers;
 using OTFN.Core.Market;
+using OTFN.Core.Strategy;
 using OTFN.Core.Terminals;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,8 @@ namespace OTFN.Core.Endpoints
         public event EndpointRefreshHandler Refreshed;
 
         private ITradingInterface TradingInterface;
+
+        private Dictionary<int, IStrategy> BoundStrategies = new Dictionary<int, IStrategy>();
 
         internal Endpoint(ITradingInterface tradingInterface, Broker broker, Account account, Symbol symbol, Timeframe timeframe)
         {
@@ -58,10 +61,27 @@ namespace OTFN.Core.Endpoints
             }
         }
 
+        internal IStrategy BindStrategy(String strategyName, int magicNumber)
+        {
+            IStrategy strategy;
+            if(!BoundStrategies.TryGetValue(magicNumber, out strategy))
+            {
+                strategy = StrategyRegistry.CreateStrategyInstance(strategyName, this);
+                if (strategy == null)
+                    return null;
+                BoundStrategies.Add(magicNumber, strategy);
+            }
+            else
+            {
+                strategy.OnEndpointRefreshed();
+            }
+            return strategy;
+        }
+
 
         ////////////////////////////////////////////////////
 
-        public Task<List<Order>> GetOrders()
+        public Task<IList<Order>> GetOrders()
         {
             return TradingInterface.GetOrders();
         }

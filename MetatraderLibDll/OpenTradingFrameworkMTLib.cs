@@ -15,11 +15,15 @@ using log4net.Core;
 using OTFN.Core.Errors;
 using OTFN.Core.Strategy;
 using OTFN.Core.Endpoints;
+using Newtonsoft.Json.Linq;
+using OTFN.Core.Endpoints.JSON;
 
 namespace MetatraderLibDll
 {
     public class OpenTradingFrameworkMTLib
     {
+        private const int MaxQueueSize = 100000;
+
         static OpenTradingFrameworkMTLib()
         {
             log4net.Config.XmlConfigurator.Configure();
@@ -28,6 +32,8 @@ namespace MetatraderLibDll
         private static ILog Log = LogManager.GetLogger(typeof(OpenTradingFrameworkMTLib).Name);
 
         private static Dictionary<int, IStrategy> instances = new Dictionary<int,IStrategy>();
+
+        private static Queue<MT4Request> requestQueue = new Queue<MT4Request>();
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         private struct MqlTick
@@ -55,6 +61,94 @@ namespace MetatraderLibDll
             public Int32 Magic;
         };
 
+        private static JObject CreateErrorResponse(string error, int errorCode, int requestId)
+        {
+            JObject resp = new JObject();
+            resp[JSONTradingInterface.KeyRequestId] = requestId;
+            resp[JSONTradingInterface.KeyError] = error;
+            resp[JSONTradingInterface.KeyErrorCode] = errorCode;
+            return resp;
+        }
+
+        private static JObject CreateResponse(int requestId, JToken data)
+        {
+            JObject json = new JObject();
+            json[JSONTradingInterface.KeyRequestId] = requestId;
+            json[JSONTradingInterface.KeyData] = data;
+            return json;
+        }
+
+        internal static async Task<JObject> ProcessRequest(JObject req)
+        {
+            string command = (string)req[JSONTradingInterface.KeyCommand];
+            int requestId = (int)req[JSONTradingInterface.KeyRequestId];
+            JToken data = (JToken)req[JSONTradingInterface.KeyData];
+            switch(command)
+            {
+                case JSONTradingInterface.CommandGetOrders:
+                    return await ReqGetOrders(requestId, data);    
+                default:
+                    return CreateErrorResponse("Command not implemented", (int)ErrorCodes.NotImplemented, requestId);
+            }
+        }
+
+        private static async Task<JObject> ReqGetOrders(int requestId, JToken data)
+        {
+            MT4Response resp = await EnqueueRequest(new MT4Request(MT4Request.GetOrders));
+            if(resp.ErrorCode == 0)
+            {
+                JArray orders = new JArray();
+
+                foreach(Order o in resp.Objects)
+                {
+                    orders.Add(((Order)o).ToJSONObject());
+                }
+                return CreateResponse(requestId, orders);
+            }
+
+            return CreateErrorResponse("Failed to get Orders", resp.ErrorCode, requestId);
+        }
+
+        private static Task<MT4Response> EnqueueRequest(MT4Request req)
+        {
+            lock(requestQueue)
+            {
+                requestQueue.Enqueue(req);
+                if (requestQueue.Count >= MaxQueueSize)
+                    throw new RequestQueueOverloadException();
+            }
+            return req.WaitTask;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="instanceId"></param>
+        /// <param name="doubles"></param>
+        /// <param name="strings"></param>
+        /// <param name="requestId"></param>
+        /// <returns>Command ID or negative value if there is no more commands pending</returns>
+        public static int OTFN_GetNextRequest(int instanceId, out double[] doubles, out string[] strings, out int requestId)
+        {
+            doubles = null;
+            strings = null;
+            requestId = 0;
+            MT4Request req;
+            lock(requestQueue)
+            {
+                if (requestQueue.Count == 0)
+                    return -1;
+
+                req = requestQueue.Dequeue();
+            }
+
+            doubles = req.Doubles;
+            strings = req.Strings;
+            requestId = req.Id;
+
+            return req.Command;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -65,24 +159,9 @@ namespace MetatraderLibDll
         /// <param name="symbol"></param>
         /// <param name="timeframe"></param>
         /// <returns>InstanceId of this particular expert or negative value on error</returns>
-        public static int Init(string brokerName, string accountId, string strategyName, int magic, string symbol, int timeframe)
+        public static int OTFN_Init(string brokerName, string accountId, string strategyName, int magic, string symbol, int timeframe, int cookie)
         {
-            Log.Info(String.Format("Init: broker: {0}, account: {1}, strategy: {2}, magic: {3}, symbol: {4}, timeframe: {5}", brokerName, accountId, strategyName, magic, symbol, timeframe));
-
-            ForexBroker broker = new ForexBroker(brokerName);
-            broker = (ForexBroker)BrokerRegistry.RegisterBroker(broker);
-            Symbol brokerSymbol = broker.GetSymbolByName(symbol);
-
-            if (brokerSymbol == null)
-                throw new SymbolNotFoundException(symbol);
-
-            Timeframe tf = Timeframe.GetFromMinutes(timeframe);
-            Account account = broker.GetAccountById(accountId);
-
-            Endpoint endpoint = EndpointRegistry.RefreshEndpoint(new MT4DirectEndpoint(), broker, account, brokerSymbol, tf);
-
-            IStrategy strategy = StrategyRegistry.CreateStrategyInstance(strategyName, endpoint);
-
+            
             if(strategy == null)
                 throw new StrategyNotFoundException(strategyName);
 
@@ -92,10 +171,10 @@ namespace MetatraderLibDll
         }
 
 
-        public static int SendOrders(int expertId, OrderInfo[] orders, int ordersCount)
+        public static int OTFN_Orders(int requestId, OrderInfo[] orders, int ordersCount)
         {
             IStrategy strategy;
-            if (!instances.TryGetValue(expertId, out strategy))
+            if (!instances.TryGetValue(requestId, out strategy))
                 return -1;
 
             List<Order> orderList = new List<Order>();

@@ -83,7 +83,7 @@ namespace OTFN.Core.Brokers
                         if (endpoint == null)
                             throw new AccountOfflineException(accountId);
 
-                        List<Order> newOrders = await endpoint.GetOrders();
+                        IList<Order> newOrders = await endpoint.GetOrders();
 
                         IEnumerable<Order> closed = orders.Except(newOrders);
                         IEnumerable<Order> opened = newOrders.Except(orders);

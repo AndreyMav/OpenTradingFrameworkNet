@@ -43,7 +43,7 @@ namespace OTFN.Core.Market
             return Ticket.GetHashCode();
         }
 
-        public void OnClosed()
+        internal void OnClosed()
         {
             if (Closed != null)
                 Closed(this, null);

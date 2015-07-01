@@ -6,16 +6,18 @@ using System.Threading.Tasks;
 
 namespace OTFN.Core.Errors
 {
-    public class OTFNException : Exception
+    public class RequestQueueOverloadException : OTFNException
     {
-        public OTFNException(string message) : base(message)
+        public RequestQueueOverloadException(string message)
+            : base(message)
         {
 
         }
 
-        public OTFNException()
+        public RequestQueueOverloadException()
         {
 
         }
+
     }
 }

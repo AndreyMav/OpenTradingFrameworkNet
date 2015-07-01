@@ -9,6 +9,7 @@ namespace OTFN.Core.Strategy
     public interface IStrategy
     {
         int InstanceId { get; }
-        void UpdateOrders(ICollection<Order> orders);
+
+        void OnEndpointRefreshed();
     }
 }

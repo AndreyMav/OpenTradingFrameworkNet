@@ -52,6 +52,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -61,7 +64,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MT4DirectEndpoint.cs" />
+    <Compile Include="MT4DirectTradingInterface.cs" />
+    <Compile Include="MT4Request.cs" />
+    <Compile Include="MT4Response.cs" />
     <Compile Include="OpenTradingFrameworkMTLib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

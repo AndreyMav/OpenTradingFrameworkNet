@@ -27,6 +27,7 @@ struct OrderInfo
 
 #import "OTFNBridge.dll"
     int OTFN_Init(string brokerName, string accountId, string strategyName, int magic, string symbol, int timeframe);
+    int OTFN_GetNextRequest(int instanceId, double &doubles[], string &strings[], int &requestId);
     int OTFN_SendOrders(int expertId, OrderInfo &orders[], int ordersCount);
 #import
 

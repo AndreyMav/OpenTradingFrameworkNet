@@ -22,8 +22,8 @@ namespace OTFN.Core.Strategy.Builtin.TraceStrategy
         {
         }
 
-
-
-
+        public void OnEndpointRefreshed()
+        {
+        }
     }
 }

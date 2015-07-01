@@ -16,12 +16,23 @@ namespace OTFN.Core.Strategy
         public static IStrategy CreateStrategyInstance(string strategyName, Endpoint endpoint)
         {
             IStrategyFactory factory;
-            if(!strategies.TryGetValue(strategyName, out factory))
+            lock (strategies)
             {
-                return null;
-            }
+                if (!strategies.TryGetValue(strategyName, out factory))
+                {
+                    return null;
+                }
 
-            return factory.CreateInstance(endpoint);
+                return factory.CreateInstance(endpoint);
+            }
+        }
+
+        public static bool HasStrategy(string strategyName)
+        {
+            lock(strategies)
+            {
+                return strategies.ContainsKey(strategyName);
+            }
         }
     }
 }
